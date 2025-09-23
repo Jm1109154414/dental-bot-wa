@@ -1,0 +1,18 @@
+# Framework ligero para crear el servidor web que recibe los mensajes de WhatsApp
+Flask==2.3.3
+
+# Servidor WSGI que Render usa para dejar tu app 24/7
+gunicorn==21.2.0
+
+# Cliente oficial de Google para conectar Google Calendar
+google-api-python-client==2.97.0
+google-auth==2.23.0
+
+# Lee las variables de entorno (tu archivo .env)
+python-dotenv==1.0.0
+
+# Para llamar a la API de WhatsApp
+requests==2.31.0
+
+# Para manejar fechas y horas
+pytz==2023.3

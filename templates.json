@@ -1,0 +1,11 @@
+{
+  "bienvenida": "Hola 😁 Soy el asistente de *Clínica Dental*. Elige el tratamiento que te interesa:",
+  "pedir_fecha": "¿Qué día y a qué hora te gustaría? (Ej: *mañana 4 pm*)",
+  "confirmada": "✅ ¡Cita agendada! Te esperamos el *{fecha}* a las *{hora}*. Recibirás un recordatorio.",
+  "no_hay_hueco": "Lo siento, ese horario ya está ocupado. ¿Te funciona *{alt1}* o *{alt2}*?",
+  "recordatorio": "⏰ Recordatorio: tu cita es en 5 h. ¿Confirmas o cancelas?",
+  "confirmar_btn": "Confirmar",
+  "cancelar_btn": "Cancelar",
+  "confirmado_ok": "¡Perfecto! Nos vemos pronto.",
+  "cancelado_ok": "Cita cancelada. Puedes volver a agendar cuando quieras."
+}

@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: dental-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn bot:app
+    envVars:
+      - key: WA_ACCESS_TOKEN
+        sync: false      # Render te pedirá el valor manualmente
+      - key: WA_PHONE_NUMBER_ID
+        sync: false
+      - key: GCLOUD_SERVICE_ACCOUNT
+        sync: false
+      - key: ZONA_HORARIA
+        value: America/Mexico_City
+
+  - type: cron
+    name: recordatorios
+    schedule: "*/5 * * * *"   # cada 5 min
+    command: python reminders.py

@@ -16,3 +16,6 @@ requests==2.31.0
 
 # Para manejar fechas y horas
 pytz==2023.3
+
+# Para manejar dashboard Google Sheets
+gspread==5.12.0

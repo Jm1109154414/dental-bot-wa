@@ -9,6 +9,7 @@ from config import VERIFIC_TOKEN, ZONA_HORARIA, LABORABLES, APERTURA, CIERRE, SL
 from calendar import buscar_huecos, crear_evento, cancelar_evento
 from whatsapp import enviar_mensaje
 from bloqueos import FESTIVOS
+from sheets import insertar_cita
 
 load_dotenv()
 app = Flask(__name__)
@@ -99,6 +100,7 @@ def procesar_mensaje(tel, texto):
         if buscar_huecos(fecha_hora, duracion):
             event_id = crear_evento(tratamiento["nombre"], fecha_hora, tel, duracion)
             temp_cache[tel]["event_id"] = event_id
+            insertar_cita(fecha_hora, tratamiento["nombre"], tel, "Agendada")
             fecha_str = fecha_hora.strftime("%d/%m/%Y")
             hora_str  = fecha_hora.strftime("%I:%M %p")
             msg = TEMPLATES["confirmada"].replace("{fecha}", fecha_str).replace("{hora}", hora_str)
@@ -119,6 +121,7 @@ def procesar_mensaje(tel, texto):
         event_id = temp_cache.get(tel, {}).get("event_id")
         if event_id:
             cancelar_evento(event_id)
+            insertar_cita(datetime.datetime.now(pytz.timezone(ZONA_HORARIA)), tratamiento["nombre"], tel, "Cancelada")
         enviar_mensaje(tel, TEMPLATES["cancelado_ok"])
         return
 

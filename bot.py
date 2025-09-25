@@ -6,7 +6,7 @@ import os, json, datetime, re, pytz
 from flask import Flask, request
 from dotenv import load_dotenv
 from config import VERIFIC_TOKEN, ZONA_HORARIA, LABORABLES, APERTURA, CIERRE, SLOT_MIN
-from calendar import buscar_huecos, crear_evento, cancelar_evento
+from calendar_functions import buscar_huecos, crear_evento, cancelar_evento
 from whatsapp import enviar_mensaje
 from bloqueos import FESTIVOS
 from sheets import insertar_cita

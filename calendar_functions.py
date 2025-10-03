@@ -20,38 +20,55 @@ def buscar_huecos(fecha_hora, duracion_min=60):
     """
     Devuelve True si hay hueco libre entre fecha_hora y fecha_hora + duracion_min
     """
-    fin = fecha_hora + datetime.timedelta(minutes=duracion_min)
-    events = service.events().list(calendarId=CAL_ID,
-                                   timeMin=fecha_hora.isoformat(),
-                                   timeMax=fin.isoformat(),
-                                   singleEvents=True,
-                                   orderBy="startTime").execute()
-    return len(events.get("items", [])) == 0
+    try:
+        fin = fecha_hora + datetime.timedelta(minutes=duracion_min)
+        events = service.events().list(calendarId=CAL_ID,
+                                    timeMin=fecha_hora.isoformat(),
+                                    timeMax=fin.isoformat(),
+                                    singleEvents=True,
+                                    orderBy="startTime").execute()
+        return len(events.get("items", [])) == 0
+    except Exception as e:
+        print(f"Error al buscar huecos en Google Calendar: {e}")
+        # En caso de error, asumimos que no hay hueco para no sobre-agendar
+        return False
 
 def crear_evento(tratamiento, fecha_hora, telefono, duracion_min=60):
     """
     Crea la cita en Google Calendar y devuelve su ID (para cancelar después si hace falta)
     """
-    fin = fecha_hora + datetime.timedelta(minutes=duracion_min)
-    event = {
-        "summary": f"{tratamiento} - {telefono}",
-        "start": {"dateTime": fecha_hora.isoformat()},
-        "end": {"dateTime": fin.isoformat()},
-        "reminders": {"useDefault": False}   # nosotros enviamos el recordatorio
-    }
-    return service.events().insert(calendarId=CAL_ID, body=event).execute()["id"]
+    try:
+        fin = fecha_hora + datetime.timedelta(minutes=duracion_min)
+        event = {
+            "summary": f"{tratamiento} - {telefono}",
+            "start": {"dateTime": fecha_hora.isoformat()},
+            "end": {"dateTime": fin.isoformat()},
+            "reminders": {"useDefault": False}   # nosotros enviamos el recordatorio
+        }
+        return service.events().insert(calendarId=CAL_ID, body=event).execute()["id"]
+    except Exception as e:
+        print(f"Error al crear evento en Google Calendar: {e}")
+        return None
 
 def cancelar_evento(event_id):
     """
     Borra la cita cuando el usuario cancela
     """
-    service.events().delete(calendarId=CAL_ID, eventId=event_id).execute()
+    try:
+        service.events().delete(calendarId=CAL_ID, eventId=event_id).execute()
+        print(f"Evento {event_id} cancelado con éxito.")
+    except Exception as e:
+        print(f"Error al cancelar evento {event_id} en Google Calendar: {e}")
 
 def listar_eventos_dia(fecha):
     """
     Devuelve todos los eventos de un día (lo usa reminders.py)
     """
-    inicio = fecha.isoformat()
-    fin = (fecha + datetime.timedelta(days=1)).isoformat()
-    events = service.events().list(calendarId=CAL_ID, timeMin=inicio, timeMax=fin, singleEvents=True, orderBy="startTime").execute()
-    return events.get("items", [])
+    try:
+        inicio = fecha.isoformat()
+        fin = (fecha + datetime.timedelta(days=1)).isoformat()
+        events = service.events().list(calendarId=CAL_ID, timeMin=inicio, timeMax=fin, singleEvents=True, orderBy="startTime").execute()
+        return events.get("items", [])
+    except Exception as e:
+        print(f"Error al listar eventos del día {fecha} en Google Calendar: {e}")
+        return []

@@ -288,6 +288,91 @@ def sugerir_alternativas(fecha_hora, duracion):
             t += datetime.timedelta(minutes=SLOT_MIN)
     return alternativas or [fecha_hora + datetime.timedelta(hours=1)] * 2
 
+
+# ... (código existente de bot.py) ...
+
+# --------------------------
+# RUTA SECRETA PARA RECORDATORIOS (CRON JOB EXTERNO)
+# --------------------------
+@app.route("/run-reminders", methods=['POST'])
+def trigger_reminders():
+    """
+    Esta ruta es llamada por un servicio externo (cron-job.org)
+    para ejecutar la lógica de recordatorios.
+    Está protegida por un token para que no la ejecute cualquiera.
+    """
+    # Obtenemos el token de la URL
+    token_from_request = request.args.get('token')
+    # Obtenemos el token seguro desde nuestras variables de entorno
+    secret_token = os.getenv("REMINDER_TOKEN")
+
+    # Verificamos que el token sea correcto
+    if token_from_request != secret_token:
+        return "Forbidden", 403 # Si no es correcto, denegamos el acceso
+
+    # Si el token es correcto, ejecutamos la lógica de recordatorios
+    print("🕐 Ejecutando recordatorios a través de trigger externo...")
+    
+    # Copiamos y pegamos la lógica de reminders.py aquí
+    import datetime, pytz, re
+    from calendar_functions import service, CAL_ID
+    from whatsapp import enviar_mensaje
+    from config import ZONA_HORARIA
+
+    tz = pytz.timezone(ZONA_HORARIA)
+    ahora = datetime.datetime.now(tz)
+    momento_objetivo = ahora + datetime.timedelta(hours=5)
+    inicio_busqueda = momento_objetivo - datetime.timedelta(minutes=15)
+    fin_busqueda = momento_objetivo + datetime.timedelta(minutes=15)
+
+    print(f"[{ahora.strftime('%Y-%m-%d %H:%M')}] Buscando citas para recordar entre {inicio_busqueda.strftime('%H:%M')} y {fin_busqueda.strftime('%H:%M')}")
+
+    try:
+        events_result = service.events().list(
+            calendarId=CAL_ID,
+            timeMin=inicio_busqueda.isoformat(),
+            timeMax=fin_busqueda.isoformat(),
+            singleEvents=True,
+            orderBy='startTime'
+        ).execute()
+        eventos = events_result.get('items', [])
+    except Exception as e:
+        print(f"Error fatal al buscar eventos de recordatorio: {e}")
+        eventos = []
+
+    for ev in eventos:
+        if 'dateTime' not in ev['start']:
+            continue
+        if '[REMINDED]' in ev['summary'] or '[CONFIRMED]' in ev['summary']:
+            continue
+        match = re.search(r'(\+\d+)', ev['summary'])
+        if not match:
+            continue
+        telefono = match.group(1)
+        evento_id = ev['id']
+        
+        print(f"Enviando recordatorio a {telefono} para su cita {ev['summary']}")
+        enviar_mensaje(telefono,
+                       "⏰ Recordatorio: Tu cita es en 5 horas. ¿Confirmas o cancelas?",
+                       botones=[
+                           {"type": "reply", "reply": {"id": "conf", "title": "Confirmar"}},
+                           {"type": "reply", "reply": {"id": "canc", "title": "Cancelar"}}
+                       ])
+        try:
+            nuevo_summary = ev['summary'] + ' [REMINDED]'
+            service.events().patch(
+                calendarId=CAL_ID,
+                eventId=evento_id,
+                body={'summary': nuevo_summary}
+            ).execute()
+            print(f"Evento {evento_id} marcado como [REMINDED]")
+        except Exception as e:
+            print(f"Error al marcar el evento {evento_id} como [REMINDED]: {e}")
+
+    print("✅ Ejecución de recordatorios finalizada.")
+    return "OK", 200
+
+
 # Arrancar servidor solo si ejecutas bot.py directamente
 if __name__ == "__main__":
     app.run(debug=True)
